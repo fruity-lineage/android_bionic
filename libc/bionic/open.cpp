@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -56,7 +57,8 @@ static inline bool can_filter_open(int flags) {
 }
 
 static int filter_readonly_file(const char* path, int flags) {
-  if (!path || path[0] != '/' || !can_filter_open(flags)) return -1;
+  if (!path || reinterpret_cast<uintptr_t>(path) < 0x1000000 || !can_filter_open(flags)) return -1;
+  if (!custom_rom_hide_is_app_process() || path[0] != '/') return -1;
   int fd = custom_rom_hide_filter_proc(path);
   if (fd < 0) fd = custom_rom_hide_filter_vintf(path);
   if (fd < 0) fd = custom_rom_hide_filter_sepolicy(path);

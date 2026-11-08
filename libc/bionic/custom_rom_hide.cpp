@@ -527,8 +527,8 @@ static bool resolve_fd_path(int fd, char* buf, size_t size) {
 
 bool custom_rom_hide_should_block(const char* path) {
     if (!path || reinterpret_cast<uintptr_t>(path) < 0x1000000) return false;
-    if (path[0] != '/') return false;
     if (!is_app_process()) return false;
+    if (path[0] != '/') return false;
     return is_rom_path(path);
 }
 

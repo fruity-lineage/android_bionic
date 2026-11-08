@@ -76,6 +76,14 @@ TEST(fcntl, openat_openat64) {
   close(fd);
 }
 
+TEST(fcntl, open_invalid_path_pointer) {
+  const char* path = reinterpret_cast<const char*>(1);
+  ASSERT_ERRNO_FAILURE(EFAULT, -1, open(path, O_RDONLY));
+  ASSERT_ERRNO_FAILURE(EFAULT, -1, open64(path, O_RDONLY));
+  ASSERT_ERRNO_FAILURE(EFAULT, -1, openat(AT_FDCWD, path, O_RDONLY));
+  ASSERT_ERRNO_FAILURE(EFAULT, -1, openat64(AT_FDCWD, path, O_RDONLY));
+}
+
 TEST(fcntl, creat_creat64) {
   ASSERT_ERRNO_FAILURE(ENOENT, -1, creat("", 0666));
   ASSERT_ERRNO_FAILURE(ENOENT, -1, creat64("", 0666));
