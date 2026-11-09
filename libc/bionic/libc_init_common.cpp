@@ -301,6 +301,7 @@ static bool __is_unsafe_environment_variable(const char* name) {
   // security transition.
   static constexpr const char* UNSAFE_VARIABLE_NAMES[] = {
       "ANDROID_DNS_MODE",
+      "DISABLE_HARDENED_MALLOC",
       "GCONV_PATH",
       "GETCONF_DIR",
       "HOSTALIASES",

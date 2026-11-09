@@ -40,6 +40,14 @@
 #include <procinfo/process_map.h>
 
 #include "utils.h"
+#include "platform/bionic/malloc.h"
+
+#define SKIP_WITHOUT_MALLOC_ITERATE \
+  do { \
+    bool supported; \
+    ASSERT_TRUE(android_mallopt(M_GET_MALLOC_ITERATE_SUPPORTED, &supported, sizeof(supported))); \
+    if (!supported) GTEST_SKIP() << "native allocator does not support iteration"; \
+  } while (false)
 
 extern "C" void malloc_disable();
 extern "C" void malloc_enable();
@@ -181,6 +189,7 @@ static void AllocateSizes(TestDataType* test_data, const std::vector<size_t>& si
 TEST(malloc_iterate, small_allocs) {
 #if defined(__BIONIC__)
   SKIP_WITH_HWASAN;
+  SKIP_WITHOUT_MALLOC_ITERATE;
   TestDataType test_data;
 
   // Try to cycle through all of the different small bins.
@@ -205,6 +214,7 @@ TEST(malloc_iterate, small_allocs) {
 TEST(malloc_iterate, large_allocs) {
 #if defined(__BIONIC__)
   SKIP_WITH_HWASAN;
+  SKIP_WITHOUT_MALLOC_ITERATE;
   TestDataType test_data;
 
   // Try some larger sizes.
@@ -225,6 +235,7 @@ TEST(malloc_iterate, large_allocs) {
 TEST(malloc_iterate, invalid_pointers) {
 #if defined(__BIONIC__)
   SKIP_WITH_HWASAN;
+  SKIP_WITHOUT_MALLOC_ITERATE;
   TestDataType test_data = {};
 
   // Only attempt to get memory data for maps that are not from the native allocator.

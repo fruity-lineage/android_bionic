@@ -33,6 +33,7 @@
 #include <private/bionic_globals.h>
 
 #include "gwp_asan_wrappers.h"
+#include "malloc_common.h"
 #include "malloc_limit.h"
 
 #if !defined(LIBC_STATIC)
@@ -58,6 +59,14 @@ __BIONIC_WEAK_FOR_NATIVE_BRIDGE
 #endif
 extern "C" bool android_mallopt(int opcode, void* arg, size_t arg_size) {
   // Functionality available in both static and dynamic libc.
+  if (opcode == M_GET_MALLOC_ITERATE_SUPPORTED) {
+    if (arg == nullptr || arg_size != sizeof(bool)) {
+      errno = EINVAL;
+      return false;
+    }
+    *reinterpret_cast<bool*>(arg) = MallocIterateSupported();
+    return true;
+  }
   if (opcode == M_GET_DECAY_TIME_ENABLED) {
     if (arg == nullptr || arg_size != sizeof(bool)) {
       errno = EINVAL;

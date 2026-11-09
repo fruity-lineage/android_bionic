@@ -111,6 +111,11 @@ enum {
   //   arg_size = sizeof(bool)
   M_GET_DECAY_TIME_ENABLED = 12,
 #define M_GET_DECAY_TIME_ENABLED M_GET_DECAY_TIME_ENABLED
+  // Query whether the native allocator supports allocation enumeration.
+  //   arg = bool*
+  //   arg_size = sizeof(bool)
+  M_GET_MALLOC_ITERATE_SUPPORTED = 13,
+#define M_GET_MALLOC_ITERATE_SUPPORTED M_GET_MALLOC_ITERATE_SUPPORTED
 };
 
 #pragma clang diagnostic push

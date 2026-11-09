@@ -34,6 +34,7 @@
 #include <link.h>
 #include <platform/bionic/malloc.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdatomic.h>
 
 #include "private/WriteProtected.h"
@@ -49,6 +50,9 @@ struct libc_globals {
   uintptr_t heap_pointer_tag;
   _Atomic(bool) decay_time_enabled;
   _Atomic(bool) memtag;
+  struct sigaction saved_sigabrt_handler;
+  bool saved_sigabrt_handler_valid;
+  const MallocDispatch* native_allocator_dispatch;
 
   // In order to allow a complete switch between dispatch tables without
   // the need for copying each function by function in the structure,

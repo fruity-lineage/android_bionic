@@ -37,8 +37,8 @@
 
 void RunGwpAsanTest(const char* test_name) {
   ExecTestHelper eh;
-  eh.SetEnv({"GWP_ASAN_SAMPLE_RATE=1", "GWP_ASAN_PROCESS_SAMPLING=1", "GWP_ASAN_MAX_ALLOCS=40000",
-             nullptr});
+  eh.SetEnv({"DISABLE_HARDENED_MALLOC=1", "GWP_ASAN_SAMPLE_RATE=1", "GWP_ASAN_PROCESS_SAMPLING=1",
+             "GWP_ASAN_MAX_ALLOCS=40000", nullptr});
   std::string filter_arg = "--gtest_filter=";
   filter_arg += test_name;
   std::string exec(testing::internal::GetArgvs()[0]);
@@ -51,6 +51,8 @@ void RunGwpAsanTest(const char* test_name) {
 
 void RunSubtestNoEnv(const char* test_name) {
   ExecTestHelper eh;
+  // GWP-ASan's direct allocator entry points require the Scudo fallback.
+  eh.SetEnv({"DISABLE_HARDENED_MALLOC=1", nullptr});
   std::string filter_arg = "--gtest_filter=";
   filter_arg += test_name;
   std::string exec(testing::internal::GetArgvs()[0]);

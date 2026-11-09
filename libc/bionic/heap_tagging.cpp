@@ -78,6 +78,9 @@ void SetDefaultHeapTaggingLevel() {
     case M_HEAP_TAGGING_LEVEL_TBI:
     case M_HEAP_TAGGING_LEVEL_NONE:
       scudo_malloc_disable_memory_tagging();
+#if defined(HAVE_HARDENED_MALLOC)
+      h_malloc_disable_memory_tagging();
+#endif
       break;
     case M_HEAP_TAGGING_LEVEL_SYNC:
       scudo_malloc_set_track_allocation_stacks(1);
@@ -134,6 +137,9 @@ bool SetHeapTaggingLevel(HeapTaggingLevel tag_level) {
       }
 #if defined(USE_SCUDO) && !__has_feature(hwaddress_sanitizer)
       scudo_malloc_disable_memory_tagging();
+#if defined(HAVE_HARDENED_MALLOC)
+      h_malloc_disable_memory_tagging();
+#endif
 #endif
       break;
     case M_HEAP_TAGGING_LEVEL_TBI:

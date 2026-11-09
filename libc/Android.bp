@@ -112,6 +112,20 @@ bionic_cc_defaults {
         never: true,
     },
 
+    multilib: {
+        lib64: {
+            product_variables: {
+                use_hardened_malloc: {
+                    cflags: [
+                        "-DUSE_HARDENED_MALLOC",
+                        "-DH_MALLOC_PREFIX",
+                    ],
+                    header_libs: ["libhardened_malloc_headers"],
+                },
+            },
+        },
+    },
+
     soong_config_variables: {
         release_deprecate_runtime_apex: {
             apex_available: ["//apex_available:platform"],
@@ -194,6 +208,16 @@ cc_defaults {
         "-DUSE_SCUDO",
     ],
     header_libs: ["gwp_asan_headers"],
+    multilib: {
+        lib64: {
+            product_variables: {
+                use_hardened_malloc: {
+                    srcs: [":libc_h_malloc_wrapper_src"],
+                    whole_static_libs: ["libhardened_malloc"],
+                },
+            },
+        },
+    },
     product_variables: {
         malloc_low_memory: {
             cflags: ["-UUSE_SCUDO"],
@@ -203,9 +227,15 @@ cc_defaults {
             ],
             exclude_static_libs: [
                 "libscudo",
+                "libhardened_malloc",
             ],
         },
     },
+}
+
+filegroup {
+    name: "libc_h_malloc_wrapper_src",
+    srcs: ["bionic/h_malloc_wrapper.cpp"],
 }
 
 // Functions not implemented by jemalloc directly, or that need to

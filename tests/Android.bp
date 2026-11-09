@@ -365,6 +365,7 @@ cc_test_library {
         "grp_pwd_test.cpp",
         "grp_pwd_file_test.cpp",
         "heap_tagging_level_test.cpp",
+        "hardened_malloc_test.cpp",
         "iconv_test.cpp",
         "ifaddrs_test.cpp",
         "ifunc_test.cpp",
@@ -487,6 +488,19 @@ cc_test_library {
     include_dirs: [
         "bionic/libc",
     ],
+
+    multilib: {
+        lib64: {
+            product_variables: {
+                use_hardened_malloc: {
+                    cflags: ["-DEXPECT_HARDENED_MALLOC_OPT_IN"],
+                },
+                malloc_low_memory: {
+                    cflags: ["-DEXPECT_JEMALLOC"],
+                },
+            },
+        },
+    },
 
     target: {
         bionic: {

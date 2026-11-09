@@ -61,6 +61,14 @@
 
 #define HAVE_REALLOCARRAY 1
 
+// After excluding HWASan, unsupported native iteration identifies hardened_malloc.
+#define SKIP_WITH_HARDENED_MALLOC \
+  do { \
+    bool supported; \
+    ASSERT_TRUE(android_mallopt(M_GET_MALLOC_ITERATE_SUPPORTED, &supported, sizeof(supported))); \
+    if (!supported) GTEST_SKIP() << "hardened allocator does not implement this option"; \
+  } while (false)
+
 #elif defined(__GLIBC__)
 
 #define HAVE_REALLOCARRAY __GLIBC_PREREQ(2, 26)
@@ -421,6 +429,7 @@ TEST(malloc, mallopt_smoke) {
 TEST(malloc, mallopt_decay) {
 #if defined(__BIONIC__)
   SKIP_WITH_HWASAN << "hwasan does not implement mallopt";
+  SKIP_WITH_HARDENED_MALLOC;
   ASSERT_EQ(1, mallopt(M_DECAY_TIME, -1));
   ASSERT_EQ(1, mallopt(M_DECAY_TIME, 1));
   ASSERT_EQ(1, mallopt(M_DECAY_TIME, 0));
@@ -444,6 +453,7 @@ TEST(malloc, mallopt_purge) {
 TEST(malloc, mallopt_purge_all) {
 #if defined(__BIONIC__)
   SKIP_WITH_HWASAN << "hwasan does not implement mallopt";
+  SKIP_WITH_HARDENED_MALLOC;
   ASSERT_EQ(1, mallopt(M_PURGE_ALL, 0));
 #else
   GTEST_SKIP() << "bionic-only test";
@@ -453,6 +463,7 @@ TEST(malloc, mallopt_purge_all) {
 TEST(malloc, mallopt_purge_fast) {
 #if defined(__BIONIC__)
   SKIP_WITH_HWASAN << "hwasan does not implement mallopt";
+  SKIP_WITH_HARDENED_MALLOC;
   ASSERT_EQ(1, mallopt(M_PURGE_FAST, 0));
 #else
   GTEST_SKIP() << "bionic-only test";
@@ -462,6 +473,7 @@ TEST(malloc, mallopt_purge_fast) {
 TEST(malloc, mallopt_log_stats) {
 #if defined(__BIONIC__)
   SKIP_WITH_HWASAN << "hwasan does not implement mallopt";
+  SKIP_WITH_HARDENED_MALLOC;
   ASSERT_EQ(1, mallopt(M_LOG_STATS, 0));
 #else
   GTEST_SKIP() << "bionic-only test";
@@ -482,6 +494,7 @@ TEST(malloc, mallopt_unique_params) {
       std::make_pair(M_TSDS_COUNT_MAX, "M_TSDS_COUNT_MAX"),
       std::make_pair(M_BIONIC_ZERO_INIT, "M_BIONIC_ZERO_INIT"),
       std::make_pair(M_BIONIC_SET_HEAP_TAGGING_LEVEL, "M_BIONIC_SET_HEAP_TAGGING_LEVEL"),
+      std::make_pair(M_BIONIC_RESTORE_DEFAULT_SIGABRT_HANDLER, "M_BIONIC_RESTORE_DEFAULT_SIGABRT_HANDLER"),
       std::make_pair(M_LOG_STATS, "M_LOG_STATS"),
   };
 
@@ -1118,6 +1131,7 @@ TEST(android_mallopt, get_decay_time_enabled_errors) {
 TEST(android_mallopt, get_decay_time_enabled) {
 #if defined(__BIONIC__)
   SKIP_WITH_HWASAN << "hwasan does not implement mallopt";
+  SKIP_WITH_HARDENED_MALLOC;
 
   EXPECT_EQ(1, mallopt(M_DECAY_TIME, 0));
 
@@ -1148,6 +1162,7 @@ TEST(android_mallopt, DISABLED_verify_decay_time_on) {
 TEST(android_mallopt, decay_time_set_using_env_variable) {
 #if defined(__BIONIC__)
   SKIP_WITH_HWASAN << "hwasan does not implement mallopt";
+  SKIP_WITH_HARDENED_MALLOC;
 
   bool value;
   ASSERT_TRUE(android_mallopt(M_GET_DECAY_TIME_ENABLED, &value, sizeof(value)));

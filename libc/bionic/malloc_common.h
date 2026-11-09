@@ -75,6 +75,14 @@ __END_DECLS
 #endif
 
 const MallocDispatch* NativeAllocatorDispatch();
+bool MallocIterateSupported();
+
+#if defined(USE_HARDENED_MALLOC) && defined(__LP64__) && defined(USE_SCUDO) && \
+    !__has_feature(hwaddress_sanitizer)
+#define HAVE_HARDENED_MALLOC
+#include "h_malloc.h"
+extern "C" int h_malloc_info(int options, FILE* fp);
+#endif
 
 static inline const MallocDispatch* GetDispatchTable() {
   return atomic_load_explicit(&__libc_globals->current_dispatch_table, memory_order_acquire);

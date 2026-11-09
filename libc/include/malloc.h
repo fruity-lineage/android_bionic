@@ -342,6 +342,9 @@ int malloc_info(int __must_be_zero, FILE* _Nonnull __fp) __INTRODUCED_IN(23);
  */
 #define M_BIONIC_SET_HEAP_TAGGING_LEVEL (-204)
 
+/** @hide Restore the SIGABRT disposition saved during libc startup. */
+#define M_BIONIC_RESTORE_DEFAULT_SIGABRT_HANDLER (-1003)
+
 /**
  * Constants for use with the M_BIONIC_SET_HEAP_TAGGING_LEVEL mallopt() option.
  */

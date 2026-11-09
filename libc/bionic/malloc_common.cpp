@@ -37,11 +37,14 @@
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include <platform/bionic/malloc.h>
 #include <private/ScopedPthreadMutexLocker.h>
 #include <private/bionic_config.h>
 #include <private/bionic_defs.h>
+#include <private/hardened_malloc_platform.h>
 
 #include "gwp_asan_wrappers.h"
 #include "heap_tagging.h"
@@ -112,6 +115,10 @@ extern "C" int malloc_info(int options, FILE* fp) {
 
 extern "C" int mallopt(int param, int value) {
   // Some are handled by libc directly rather than by the allocator.
+  if (param == M_BIONIC_RESTORE_DEFAULT_SIGABRT_HANDLER) {
+    if (!__libc_globals->saved_sigabrt_handler_valid) return 0;
+    return sigaction(SIGABRT, &__libc_globals->saved_sigabrt_handler, nullptr) == 0;
+  }
   if (param == M_BIONIC_SET_HEAP_TAGGING_LEVEL) {
     ScopedPthreadMutexLocker locker(&g_heap_tagging_lock);
     return SetHeapTaggingLevel(static_cast<HeapTaggingLevel>(value));
@@ -363,8 +370,46 @@ static constexpr MallocDispatch __libc_malloc_default_dispatch __attribute__((un
     Malloc(malloc_info),
 };
 
+#if defined(HAVE_HARDENED_MALLOC)
+static int HardenedMallocIterate(uintptr_t, size_t,
+                                 void (*)(uintptr_t, size_t, void*), void*) {
+  // Upstream h_malloc_iterate aborts rather than enumerating allocations.
+  errno = ENOTSUP;
+  return -1;
+}
+
+static constexpr MallocDispatch __hardened_malloc_dispatch = {
+    h_calloc,
+    h_free,
+    h_mallinfo,
+    h_malloc,
+    h_malloc_usable_size,
+    h_memalign,
+    h_posix_memalign,
+    h_realloc,
+    h_reallocarray,
+    HardenedMallocIterate,
+    h_malloc_disable,
+    h_malloc_enable,
+    h_mallopt,
+    h_aligned_alloc,
+    h_malloc_info,
+};
+#endif
+
 const MallocDispatch* NativeAllocatorDispatch() {
-  return &__libc_malloc_default_dispatch;
+  const MallocDispatch* dispatch = __libc_globals->native_allocator_dispatch;
+  return dispatch != nullptr ? dispatch : &__libc_malloc_default_dispatch;
+}
+
+bool MallocIterateSupported() {
+#if __has_feature(hwaddress_sanitizer)
+  return false;
+#elif defined(HAVE_HARDENED_MALLOC)
+  return NativeAllocatorDispatch() != &__hardened_malloc_dispatch;
+#else
+  return true;
+#endif
 }
 
 #if !defined(LIBC_STATIC)
@@ -376,6 +421,17 @@ void MallocInitImpl(libc_globals* globals);
 // and libc_init_static.cpp.
 __BIONIC_WEAK_FOR_NATIVE_BRIDGE
 __LIBC_HIDDEN__ void __libc_init_malloc(libc_globals* globals) {
+  globals->saved_sigabrt_handler_valid =
+      sigaction(SIGABRT, nullptr, &globals->saved_sigabrt_handler) == 0;
+  globals->native_allocator_dispatch = &__libc_malloc_default_dispatch;
+#if defined(HAVE_HARDENED_MALLOC)
+  if (getenv("DISABLE_HARDENED_MALLOC") == nullptr &&
+      HardenedMallocSupportsPlatform(getpagesize())) {
+    globals->native_allocator_dispatch = &__hardened_malloc_dispatch;
+    atomic_store(&globals->current_dispatch_table, &__hardened_malloc_dispatch);
+    atomic_store(&globals->default_dispatch_table, &__hardened_malloc_dispatch);
+  }
+#endif
 #if !defined(LIBC_STATIC)
   MallocInitImpl(globals);
 #endif
